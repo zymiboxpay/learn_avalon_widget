@@ -7,6 +7,30 @@
  *    <p>spinner组件是用来增强输入框的能力，使其可以通过上下按钮或者键盘上的up、down键来改变输入域的数值，而且确保输入域始终是数值字符，非数值字符无效，组件会默认将非数值字符转换为最近一次的输入域数值</p>
  */
 define(["../avalon.getModel", "text!./avalon.spinner.html", "css!../chameleon/oniui-common.css", "css!./avalon.spinner.css"], function(avalon, sourceHTML) {
+    // sourceHTML 就是组件的模板文件
+
+
+    /**
+     * 首先要在 avalon.ui 中注册组件
+     * widget 可用于设置相关默认值
+     *
+     * 以下所说的例子，指在 avalon.spinner.ex1.html 中的 <input ms-duplex="p1" ms-widget="spinner, $spinner, $spinnerOpts" />
+     *
+     * element 是声明引用组件的DOM元素，在例子就是 <input ms-duplex="p1" ms-widget="spinner, $spinner, $spinnerOpts" />
+     *
+     * data 是一个复杂的对象，挑几个属性来说：
+     *     
+     *     "组件名称"+Id 是用户命名的，引用组件时的第二个参数，即上例中的 $spinner
+     *     
+     *     "组件名称"+Options 是一个对象，包含 在 widget.defaults里设置的属性及属性值，
+     *     也包含用户在引用组件时的第三个参数里设置的属性及属性值，后者覆盖前者。
+     *     
+     *     这个对象本身就有 vmodels 属性，跟 接下来的参数 vmodels 是同一个对象
+     *
+     * vmodels 是一个vm数组，里面的vm对象是包含了组件的vm，在例子中就是 pager
+     * 
+     * 
+     */
     var widget = avalon.ui.spinner = function(element, data, vmodels) {
         var options = data.spinnerOptions,
             template = sourceHTML,
@@ -68,17 +92,27 @@ define(["../avalon.getModel", "text!./avalon.spinner.html", "css!../chameleon/on
             }
         }
 
+        // options.getTemplate 只是简单地返回 template, 前面使 template = sourceHTML
         options.template = options.getTemplate(template, options);
+
         element.value  = options.value || element.value;
         if (options.value === void 0) {
             options.value = element.value
         }
         options.disabled = disabled && disabledVM && disabledVM[1][disabledVM[0]] || element.disabled || false;
+
+        // 定义 组件的vm
         var vmodel = avalon.define(data.spinnerId, function(vm) {
+            //浅拷贝相关设置
             avalon.mix(vm, options);
+
             vm.$skipArray = ["widgetElement", "step"];
+
+            //暴露组件原始DOM元素
             vm.widgetElement = element;
+
             var wrapper = null/*, focusValue = 0*/;
+            //初始化组件的界面
             vm.$init = function() {
                 wrapper = avalon.parseHTML(options.template).firstChild;
                 var tmpBElement = wrapper.getElementsByTagName("b")[0],
@@ -101,10 +135,12 @@ define(["../avalon.getModel", "text!./avalon.spinner.html", "css!../chameleon/on
                     options.onInit.call(element, vmodel, options, vmodels)
                 }
             }
+            //清空构成UI的所有节点
             vm.$remove = function() {
                 wrapper.innerHTML = wrapper.textContent = "";
                 wrapper.parentNode.removeChild(wrapper);
             }
+            //在组件的模板文件中写下的事件
             vm._add = function(event) { // add number by step
                 var value = Number(element.value),
                     subValue = 0;
@@ -117,6 +153,7 @@ define(["../avalon.getModel", "text!./avalon.spinner.html", "css!../chameleon/on
                 vmodel.value = element.value = subValue;
                 options.onIncrease.call(event.target, subValue);
             }
+            //在组件的模板文件中写下的事件
             vm._sub = function(event) { // minus number by step
                 var value = Number(element.value),
                     subValue = 0;
@@ -186,7 +223,7 @@ define(["../avalon.getModel", "text!./avalon.spinner.html", "css!../chameleon/on
             } 
             return parseFloat(v)
         }
-        return vmodel;
+        return vmodel; //必须返回组件VM
     }
     widget.version = 1.0
     widget.defaults = {
